@@ -182,8 +182,8 @@
     </div>
 
     <script>
-      // ✅ NOVA URL DA API CONFIGURADA:
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAL1q6oJJui92tUo6KDRp_rh5cG9XGUy-60qwbYlsHq5fhihd1SD6sBgG5U3MDl8R2/exec";
+      // ✅ URL ATUALIZADA (Certifique-se que o script no Google é o da API)
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcwwJVsM0oUdkgiyvSrGf-ZP4dzhJaqBT_OdVbd3IMdpa8vgn5FzwyB1jC4kjUuCiP/exec";
 
       let dadosGlobais = {}; 
 
@@ -192,7 +192,6 @@
       };
 
       function carregarTarefas() {
-        // Faz a chamada para a API usando o novo link
         fetch(SCRIPT_URL + "?op=getDados")
             .then(res => res.json())
             .then(dados => {
@@ -203,7 +202,7 @@
                 console.error(erro);
                 document.getElementById('app-content').innerHTML = 
                   '<div style="text-align:center; padding:20px; color:red;">' +
-                  'Erro ao conectar.<br>Verifique se a implantação está definida como "Qualquer pessoa" (Anyone).</div>';
+                  'Erro ao conectar.<br>Verifique se o Google Script foi implantado como "Nova Versão".</div>';
             });
       }
 
@@ -233,7 +232,6 @@
             const statusText = item.feito ? "Concluído" : "Pendente";
             const rowClass = item.feito ? "completed-row" : "";
             
-            // Botões de tempo
             let htmlTimers = '';
             if (item.tempos && item.tempos.length > 0 && item.tempos[0] !== "") {
               htmlTimers = '<div class="action-toolbar">';
@@ -246,7 +244,6 @@
               htmlTimers += '</div>';
             }
 
-            // Tratamento de aspas simples nos nomes das tarefas
             const tarefaSafe = item.tarefa.replace(/'/g, "\\'");
 
             html += `
@@ -277,7 +274,6 @@
         const statusSpan = element.querySelector('.object-status');
         const isDone = statusSpan.classList.contains('status-success');
         
-        // Atualização visual imediata (Otimista)
         if (isDone) {
             statusSpan.className = 'object-status status-pending';
             statusSpan.innerText = "Pendente";
@@ -290,7 +286,6 @@
             atualizarCacheLocal(dia, tarefa, true);
         }
 
-        // Envia atualização para a API
         const url = SCRIPT_URL + "?op=alternarStatus&dia=" + encodeURIComponent(dia) + "&tarefa=" + encodeURIComponent(tarefa);
         fetch(url, { method: "POST" });
       }
@@ -313,7 +308,6 @@
           return;
         }
 
-        // Reseta outros botões
         document.querySelectorAll('.sap-btn').forEach(b => {
           b.classList.remove('active');
           if(b.dataset.orig) b.innerText = b.dataset.orig;
