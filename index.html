@@ -182,7 +182,7 @@
     </div>
 
     <script>
-      // ✅ URL VALIDADA PELO DIAGNÓSTICO
+      // ✅ URL VALIDADA
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfgn4nfDZ5RHySA5ibOzFhZVofGzaiHIiBvfhrDadtEGf98sao3S-PSM5CmMy67T9e/exec";
 
       let dadosGlobais = {}; 
@@ -197,6 +197,7 @@
             .then(dados => {
                 dadosGlobais = dados;
                 renderizar(dados, 'todos');
+                retomarTimerAtivo(); // ✅ Recupera o timer se a página tiver sido fechada
             })
             .catch(erro => {
                 console.error(erro);
@@ -238,7 +239,9 @@
               item.tempos.forEach(min => {
                 let m = String(min).trim();
                 if(m) {
-                  htmlTimers += `<button class="sap-btn" onclick="iniciarTimer(this, ${m}, event)">⏱ ${m} min</button>`;
+                  // ✅ Cria ID único para restaurar o timer correto depois
+                  const uniqueKey = encodeURIComponent(item.tarefa) + '-' + m;
+                  htmlTimers += `<button class="sap-btn" data-key="${uniqueKey}" data-min="${m}" onclick="iniciarTimer(this, ${m}, event)">⏱ ${m} min</button>`;
                 }
               });
               htmlTimers += '</div>';
@@ -268,13 +271,13 @@
         document.querySelectorAll('.icon-tab').forEach(el => el.classList.remove('selected'));
         element.classList.add('selected');
         renderizar(dadosGlobais, tipo);
+        retomarTimerAtivo(); // ✅ Tenta restaurar timer ao mudar filtro
       }
 
       function clicarItem(element, tarefa, dia) {
         const statusSpan = element.querySelector('.object-status');
         const isDone = statusSpan.classList.contains('status-success');
         
-        // Atualiza a interface
         if (isDone) {
             statusSpan.className = 'object-status status-pending';
             statusSpan.innerText = "Pendente";
@@ -287,9 +290,6 @@
             atualizarCacheLocal(dia, tarefa, true);
         }
 
-        // ✅ CORREÇÃO CRUCIAL:
-        // Usa GET em vez de POST para salvar, pois o Google Script só tem doGet().
-        // Adiciona "nocache" para garantir que o comando chegue na planilha.
         const url = SCRIPT_URL + "?op=alternarStatus&dia=" + encodeURIComponent(dia) + 
                     "&tarefa=" + encodeURIComponent(tarefa) + 
                     "&nocache=" + new Date().getTime();
@@ -304,40 +304,106 @@
         }
       }
 
+      /* =========================================
+         ✅ NOVA LÓGICA DE TIMER (BACKGROUND)
+         ========================================= */
+      
       let intervaloAtual = null;
+
       function iniciarTimer(btn, minutos, e) {
-        e.stopPropagation(); 
+        if(e) e.stopPropagation(); 
         
+        const key = btn.dataset.key;
+
+        // Se clicar no botão que já está ativo, pausa/reseta
         if (btn.classList.contains('active')) {
-          clearInterval(intervaloAtual);
-          btn.classList.remove('active');
+          pararTimer();
           btn.innerText = `⏱ ${minutos} min`;
+          btn.classList.remove('active');
           return;
         }
 
+        // Limpa qualquer timer anterior
+        pararTimer();
+        limparBotoesVisuais();
+
+        // Define o tempo alvo (Agora + Minutos em ms)
+        const agora = new Date().getTime();
+        const tempoFinal = agora + (minutos * 60 * 1000);
+
+        // Salva estado para persistir se fechar o browser
+        localStorage.setItem('timer_ativo', JSON.stringify({
+          key: key,
+          tempoFinal: tempoFinal,
+          minutosOriginais: minutos
+        }));
+
+        rodarLogicaTimer(btn, tempoFinal, minutos);
+      }
+
+      function rodarLogicaTimer(btn, tempoFinal, minutosOriginais) {
+        btn.classList.add('active');
+        btn.dataset.orig = `⏱ ${minutosOriginais} min`;
+
+        const atualizar = () => {
+          const agora = new Date().getTime();
+          const distancia = tempoFinal - agora;
+
+          if (distancia < 0) {
+            pararTimer(); 
+            btn.innerText = "Fim";
+            btn.classList.remove('active');
+            if(navigator.vibrate) navigator.vibrate([300, 100, 300]);
+            return;
+          }
+
+          // Cálculo matemático exato
+          const m = Math.floor((distancia % (1000 * 60 * 60)) / (1000 * 60));
+          const s = Math.floor((distancia % (1000 * 60)) / 1000);
+
+          btn.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+        };
+
+        atualizar(); // Executa imediatamente
+        intervaloAtual = setInterval(atualizar, 1000);
+      }
+
+      function pararTimer() {
+        if (intervaloAtual) clearInterval(intervaloAtual);
+        localStorage.removeItem('timer_ativo');
+      }
+
+      function limparBotoesVisuais() {
         document.querySelectorAll('.sap-btn').forEach(b => {
           b.classList.remove('active');
-          if(b.dataset.orig) b.innerText = b.dataset.orig;
+          if(b.dataset.min) b.innerText = `⏱ ${b.dataset.min} min`;
         });
+      }
 
-        btn.dataset.orig = `⏱ ${minutos} min`;
-        btn.classList.add('active');
-        
-        let segundosRestantes = minutos * 60;
-        if (intervaloAtual) clearInterval(intervaloAtual);
+      // Função chamada ao carregar a página para verificar se havia um timer rodando
+      function retomarTimerAtivo() {
+        const salvo = localStorage.getItem('timer_ativo');
+        if (!salvo) return;
 
-        intervaloAtual = setInterval(() => {
-          segundosRestantes--;
-          let m = Math.floor(segundosRestantes / 60);
-          let s = segundosRestantes % 60;
-          btn.innerText = `${m}:${s < 10 ? '0'+s : s}`;
-
-          if (segundosRestantes <= 0) {
-            clearInterval(intervaloAtual);
-            btn.innerText = "Fim";
-            if(navigator.vibrate) navigator.vibrate([300, 100, 300]);
+        try {
+          const dados = JSON.parse(salvo);
+          const agora = new Date().getTime();
+          
+          // Se o tempo já expirou enquanto estava fechado
+          if (dados.tempoFinal < agora) {
+             localStorage.removeItem('timer_ativo');
+             return;
           }
-        }, 1000);
+
+          // Busca o botão pelo ID único (data-key)
+          const btn = document.querySelector(`button[data-key="${dados.key}"]`);
+          
+          if (btn) {
+            rodarLogicaTimer(btn, dados.tempoFinal, dados.minutosOriginais);
+          }
+        } catch (e) {
+          console.error("Erro ao retomar timer", e);
+        }
       }
 
       function resetarTudo() {
@@ -346,7 +412,6 @@
            btn.innerText = "A processar...";
            btn.style.opacity = "0.5";
            
-           // Usa GET também para resetar
            fetch(SCRIPT_URL + "?op=resetarSemana&nocache=" + new Date().getTime())
             .then(res => res.json())
             .then(() => {
