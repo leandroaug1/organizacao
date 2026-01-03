@@ -1,7 +1,7 @@
 function doGet(e) {
   // Recebe os parâmetros da URL
   const op = e.parameter.op;
-  
+
   // Encaminha para a função correta e retorna JSON
   if (op === 'getDados') {
     return outputJSON(getDados());
@@ -38,9 +38,10 @@ function getDados() {
 
   // Lê 4 colunas: A=Dia, B=Tarefa, C=Status, D=Tempo
   const data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+
   const dias = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
   let organizado = {};
-  
+
   dias.forEach(dia => {
     organizado[dia] = data
       .filter(row => row[0] === dia)
@@ -70,7 +71,7 @@ function alternarStatus(tarefaNome, diaNome) {
   const ss = conectarPlanilha();
   const sheet = ss.getSheetByName('Organizacao');
   const data = sheet.getDataRange().getValues();
-  
+
   for (let i = 1; i < data.length; i++) {
     // Compara dia (coluna 0) e tarefa (coluna 1)
     if (data[i][0] == diaNome && data[i][1] == tarefaNome) {
@@ -89,6 +90,7 @@ function resetarSemana() {
   const ss = conectarPlanilha();
   const sheet = ss.getSheetByName('Organizacao');
   const lastRow = sheet.getLastRow();
+
   if (lastRow >= 2) {
     // Define toda a coluna C (Status) como false
     sheet.getRange(2, 3, lastRow - 1).setValue(false);
