@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <base target="_top">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <title>SAP Fiori Home</title>
     <style>
+      /* Estilos originais mantidos */
       :root {
         --sap-shell-color: #354a5f;
         --sap-bg-color: #f7f7f7;
@@ -27,7 +27,6 @@
         padding-bottom: 60px;
       }
 
-      /* SHELL BAR (TOPO) */
       .shell-bar {
         background-color: var(--sap-shell-color);
         color: white;
@@ -43,7 +42,6 @@
       .shell-logo { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
       .shell-logo span { opacity: 0.8; font-weight: 300; font-size: 13px; }
 
-      /* HEADER & FILTROS */
       .page-header {
         background: #fff;
         padding: 10px 16px 0 16px;
@@ -66,7 +64,6 @@
         border-bottom: 3px solid var(--sap-blue);
       }
 
-      /* LISTA DE TAREFAS (OBJECT LIST) */
       .list-container {
         max-width: 800px;
         margin: 20px auto;
@@ -107,7 +104,6 @@
       .item-title { font-size: 16px; color: #000; }
       .completed-row .item-title { text-decoration: line-through; opacity: 0.6; }
       
-      /* STATUS BADGE */
       .object-status {
         font-size: 12px;
         font-weight: bold;
@@ -115,7 +111,6 @@
       .status-pending { color: var(--sap-neutral); }
       .status-success { color: var(--sap-success); }
       
-      /* TIMER TOOLBAR */
       .action-toolbar {
         display: flex;
         gap: 8px;
@@ -124,7 +119,6 @@
         border-top: 1px dashed #eee;
       }
       
-      /* BOTÕES SAP */
       .sap-btn {
         background: transparent;
         border: 1px solid var(--sap-blue);
@@ -138,7 +132,6 @@
       }
       .sap-btn:active, .sap-btn.active { background: var(--sap-blue); color: white; }
 
-      /* FOOTER FIXO */
       .footer-bar {
         position: fixed;
         bottom: 0; left: 0; width: 100%; height: 50px;
@@ -190,23 +183,34 @@
     </div>
 
     <script>
-      let dadosGlobais = {}; // Cache local
+      // ⬇️⬇️⬇️ IMPORTANTE: COLE AQUI A URL DO SEU SCRIPT (WEB APP URL) ⬇️⬇️⬇️
+      const SCRIPT_URL = "COLE_SUA_URL_AQUI"; 
+      // Exemplo: "https://script.google.com/macros/s/AKfycby.../exec"
+
+      let dadosGlobais = {}; 
 
       window.onload = function() {
+        if (SCRIPT_URL === "COLE_SUA_URL_AQUI") {
+            alert("Erro: Você precisa editar o arquivo index.html e colocar a URL do seu Google Script na variável SCRIPT_URL.");
+            return;
+        }
         carregarTarefas();
       };
 
       function carregarTarefas() {
-        google.script.run
-          .withSuccessHandler(dados => {
-             dadosGlobais = dados;
-             renderizar(dados, 'todos');
-          })
-          .withFailureHandler(e => alert("Erro: " + e))
-          .getDados();
+        // Busca os dados via API
+        fetch(SCRIPT_URL + "?op=getDados")
+            .then(res => res.json())
+            .then(dados => {
+                dadosGlobais = dados;
+                renderizar(dados, 'todos');
+            })
+            .catch(erro => {
+                console.error(erro);
+                document.getElementById('app-content').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Erro ao carregar dados.<br>Verifique se o Script foi implementado como "Qualquer pessoa" (Anyone).</div>';
+            });
       }
 
-      // Função principal de renderização
       function renderizar(dados, filtro) {
         const div = document.getElementById('app-content');
         div.innerHTML = ""; 
@@ -216,7 +220,6 @@
         diasOrdem.forEach(dia => {
           if (!dados[dia] || dados[dia].length === 0) return;
           
-          // Filtra na memória
           const itensFiltrados = dados[dia].filter(item => {
             if (filtro === 'todos') return true;
             if (filtro === 'pendente') return !item.feito;
@@ -234,12 +237,11 @@
             const statusText = item.feito ? "Concluído" : "Pendente";
             const rowClass = item.feito ? "completed-row" : "";
             
-            // Lógica para montar os botões de tempo
             let htmlTimers = '';
             if (item.tempos && item.tempos.length > 0 && item.tempos[0] !== "") {
               htmlTimers = '<div class="action-toolbar">';
               item.tempos.forEach(min => {
-                let m = min.trim();
+                let m = String(min).trim();
                 if(m) {
                   htmlTimers += `<button class="sap-btn" onclick="iniciarTimer(this, ${m}, event)">⏱ ${m} min</button>`;
                 }
@@ -247,8 +249,11 @@
               htmlTimers += '</div>';
             }
 
+            // Tratamento para caracteres especiais no nome da tarefa
+            const tarefaSafe = item.tarefa.replace(/'/g, "\\'");
+
             html += `
-              <div class="object-list-item ${rowClass}" onclick="clicarItem(this, '${item.tarefa}', '${dia}')">
+              <div class="object-list-item ${rowClass}" onclick="clicarItem(this, '${tarefaSafe}', '${dia}')">
                 <div class="item-main-content">
                   <span class="item-title">${item.tarefa}</span>
                   <span class="object-status ${statusClass}">${statusText}</span>
@@ -265,24 +270,21 @@
         }
       }
 
-      // Filtragem por abas
       function filtrar(tipo, element) {
         document.querySelectorAll('.icon-tab').forEach(el => el.classList.remove('selected'));
         element.classList.add('selected');
         renderizar(dadosGlobais, tipo);
       }
 
-      // Clicar na tarefa (mudar status)
       function clicarItem(element, tarefa, dia) {
         const statusSpan = element.querySelector('.object-status');
         const isDone = statusSpan.classList.contains('status-success');
         
-        // UI Otimista
+        // Atualização Otimista da Interface
         if (isDone) {
             statusSpan.className = 'object-status status-pending';
             statusSpan.innerText = "Pendente";
             element.classList.remove('completed-row');
-            // Atualiza cache local
             atualizarCacheLocal(dia, tarefa, false);
         } else {
             statusSpan.className = 'object-status status-success';
@@ -291,7 +293,9 @@
             atualizarCacheLocal(dia, tarefa, true);
         }
 
-        google.script.run.alternarStatus(tarefa, dia);
+        // Envia comando para a API
+        const url = SCRIPT_URL + "?op=alternarStatus&dia=" + encodeURIComponent(dia) + "&tarefa=" + encodeURIComponent(tarefa);
+        fetch(url, { method: "POST" });
       }
 
       function atualizarCacheLocal(dia, tarefa, novoStatus) {
@@ -304,7 +308,7 @@
       // Lógica do Timer
       let intervaloAtual = null;
       function iniciarTimer(btn, minutos, e) {
-        e.stopPropagation(); // Impede clique na linha
+        e.stopPropagation(); 
         
         if (btn.classList.contains('active')) {
           clearInterval(intervaloAtual);
@@ -313,7 +317,6 @@
           return;
         }
 
-        // Reseta visuais de outros botões
         document.querySelectorAll('.sap-btn').forEach(b => {
           b.classList.remove('active');
           if(b.dataset.orig) b.innerText = b.dataset.orig;
@@ -344,11 +347,19 @@
            const btn = document.querySelector('.footer-btn');
            btn.innerText = "A processar...";
            btn.style.opacity = "0.5";
-           google.script.run.withSuccessHandler(() => {
-             btn.innerText = "Resetar Semana";
-             btn.style.opacity = "1";
-             carregarTarefas();
-           }).resetarSemana();
+           
+           fetch(SCRIPT_URL + "?op=resetarSemana")
+            .then(res => res.json())
+            .then(() => {
+                btn.innerText = "Resetar Semana";
+                btn.style.opacity = "1";
+                carregarTarefas();
+            })
+            .catch(e => {
+                alert("Erro ao resetar: " + e);
+                btn.innerText = "Resetar Semana";
+                btn.style.opacity = "1";
+            });
         }
       }
     </script>
