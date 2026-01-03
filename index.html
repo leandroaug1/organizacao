@@ -182,8 +182,8 @@
     </div>
 
     <script>
-      // ✅ URL ATUALIZADA (Certifique-se que o script no Google é o da API)
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzcwwJVsM0oUdkgiyvSrGf-ZP4dzhJaqBT_OdVbd3IMdpa8vgn5FzwyB1jC4kjUuCiP/exec";
+      // ✅ URL ATUALIZADA COM O LINK FORNECIDO:
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfgn4nfDZ5RHySA5ibOzFhZVofGzaiHIiBvfhrDadtEGf98sao3S-PSM5CmMy67T9e/exec";
 
       let dadosGlobais = {}; 
 
@@ -202,7 +202,7 @@
                 console.error(erro);
                 document.getElementById('app-content').innerHTML = 
                   '<div style="text-align:center; padding:20px; color:red;">' +
-                  'Erro ao conectar.<br>Verifique se o Google Script foi implantado como "Nova Versão".</div>';
+                  'Erro ao conectar.<br>Verifique se o Google Script foi implantado como "Nova Versão" e acesso "Qualquer pessoa".</div>';
             });
       }
 
