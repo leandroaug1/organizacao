@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>jjjjjjj
+<html>
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -182,8 +182,8 @@
     </div>
 
     <script>
-      // ✅ LINK DA SUA API (JÁ CONFIGURADO)
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQf_NRc0Ay-kFhtU4amdAJFceFNnwIW42kFrrpbKZMAxyqItqaljWw7o86SfSpP94l/exec";
+      // ✅ NOVA URL DA API CONFIGURADA:
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxAL1q6oJJui92tUo6KDRp_rh5cG9XGUy-60qwbYlsHq5fhihd1SD6sBgG5U3MDl8R2/exec";
 
       let dadosGlobais = {}; 
 
@@ -192,7 +192,7 @@
       };
 
       function carregarTarefas() {
-        // Faz a chamada para a API usando o link configurado
+        // Faz a chamada para a API usando o novo link
         fetch(SCRIPT_URL + "?op=getDados")
             .then(res => res.json())
             .then(dados => {
@@ -290,7 +290,7 @@
             atualizarCacheLocal(dia, tarefa, true);
         }
 
-        // Envia atualização para a Planilha em segundo plano
+        // Envia atualização para a API
         const url = SCRIPT_URL + "?op=alternarStatus&dia=" + encodeURIComponent(dia) + "&tarefa=" + encodeURIComponent(tarefa);
         fetch(url, { method: "POST" });
       }
@@ -304,7 +304,7 @@
 
       let intervaloAtual = null;
       function iniciarTimer(btn, minutos, e) {
-        e.stopPropagation(); // Impede que o clique no botão marque a tarefa como feita
+        e.stopPropagation(); 
         
         if (btn.classList.contains('active')) {
           clearInterval(intervaloAtual);
@@ -350,7 +350,7 @@
             .then(() => {
                 btn.innerText = "Resetar Semana";
                 btn.style.opacity = "1";
-                carregarTarefas(); // Recarrega a lista
+                carregarTarefas(); 
             })
             .catch(e => {
                 alert("Erro ao resetar: " + e);
