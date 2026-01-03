@@ -182,7 +182,7 @@
     </div>
 
     <script>
-      // ✅ URL ATUALIZADA COM O LINK FORNECIDO:
+      // ✅ URL QUE VOCÊ ENVIOU
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxfgn4nfDZ5RHySA5ibOzFhZVofGzaiHIiBvfhrDadtEGf98sao3S-PSM5CmMy67T9e/exec";
 
       let dadosGlobais = {}; 
@@ -192,6 +192,7 @@
       };
 
       function carregarTarefas() {
+        // GET para carregar
         fetch(SCRIPT_URL + "?op=getDados")
             .then(res => res.json())
             .then(dados => {
@@ -202,7 +203,7 @@
                 console.error(erro);
                 document.getElementById('app-content').innerHTML = 
                   '<div style="text-align:center; padding:20px; color:red;">' +
-                  'Erro ao conectar.<br>Verifique se o Google Script foi implantado como "Nova Versão" e acesso "Qualquer pessoa".</div>';
+                  'Erro ao conectar.<br>Verifique se o Google Script foi implantado como "Nova Versão".</div>';
             });
       }
 
@@ -274,6 +275,7 @@
         const statusSpan = element.querySelector('.object-status');
         const isDone = statusSpan.classList.contains('status-success');
         
+        // Atualiza UI instantaneamente
         if (isDone) {
             statusSpan.className = 'object-status status-pending';
             statusSpan.innerText = "Pendente";
@@ -286,8 +288,13 @@
             atualizarCacheLocal(dia, tarefa, true);
         }
 
-        const url = SCRIPT_URL + "?op=alternarStatus&dia=" + encodeURIComponent(dia) + "&tarefa=" + encodeURIComponent(tarefa);
-        fetch(url, { method: "POST" });
+        // CORREÇÃO: Usar GET em vez de POST, pois o script só tem doGet.
+        // Adicionamos 'nocache' para garantir que o navegador envie o pedido.
+        const url = SCRIPT_URL + "?op=alternarStatus&dia=" + encodeURIComponent(dia) + 
+                    "&tarefa=" + encodeURIComponent(tarefa) + 
+                    "&nocache=" + new Date().getTime();
+        
+        fetch(url); // Removemos { method: "POST" }
       }
 
       function atualizarCacheLocal(dia, tarefa, novoStatus) {
@@ -334,25 +341,4 @@
       }
 
       function resetarTudo() {
-        if(confirm("Deseja realmente reiniciar a semana?")) {
-           const btn = document.querySelector('.footer-btn');
-           btn.innerText = "A processar...";
-           btn.style.opacity = "0.5";
-           
-           fetch(SCRIPT_URL + "?op=resetarSemana")
-            .then(res => res.json())
-            .then(() => {
-                btn.innerText = "Resetar Semana";
-                btn.style.opacity = "1";
-                carregarTarefas(); 
-            })
-            .catch(e => {
-                alert("Erro ao resetar: " + e);
-                btn.innerText = "Resetar Semana";
-                btn.style.opacity = "1";
-            });
-        }
-      }
-    </script>
-  </body>
-</html>
+        if(confirm
