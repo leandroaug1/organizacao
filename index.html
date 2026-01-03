@@ -6,7 +6,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <title>SAP Fiori Home</title>
     <style>
-      /* Estilos originais mantidos */
       :root {
         --sap-shell-color: #354a5f;
         --sap-bg-color: #f7f7f7;
@@ -27,6 +26,7 @@
         padding-bottom: 60px;
       }
 
+      /* SHELL BAR */
       .shell-bar {
         background-color: var(--sap-shell-color);
         color: white;
@@ -42,6 +42,7 @@
       .shell-logo { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
       .shell-logo span { opacity: 0.8; font-weight: 300; font-size: 13px; }
 
+      /* HEADER & FILTROS */
       .page-header {
         background: #fff;
         padding: 10px 16px 0 16px;
@@ -64,6 +65,7 @@
         border-bottom: 3px solid var(--sap-blue);
       }
 
+      /* LISTA */
       .list-container {
         max-width: 800px;
         margin: 20px auto;
@@ -90,7 +92,6 @@
         cursor: pointer;
         transition: background 0.1s;
       }
-      
       .object-list-item:active { background-color: #e5f0fa; }
       .object-list-item:last-child { border-bottom: none; }
 
@@ -104,10 +105,7 @@
       .item-title { font-size: 16px; color: #000; }
       .completed-row .item-title { text-decoration: line-through; opacity: 0.6; }
       
-      .object-status {
-        font-size: 12px;
-        font-weight: bold;
-      }
+      .object-status { font-size: 12px; font-weight: bold; }
       .status-pending { color: var(--sap-neutral); }
       .status-success { color: var(--sap-success); }
       
@@ -132,6 +130,7 @@
       }
       .sap-btn:active, .sap-btn.active { background: var(--sap-blue); color: white; }
 
+      /* FOOTER */
       .footer-bar {
         position: fixed;
         bottom: 0; left: 0; width: 100%; height: 50px;
@@ -183,22 +182,17 @@
     </div>
 
     <script>
-      // ⬇️⬇️⬇️ IMPORTANTE: COLE AQUI A URL DO SEU SCRIPT (WEB APP URL) ⬇️⬇️⬇️
-      const SCRIPT_URL = "COLE_SUA_URL_AQUI"; 
-      // Exemplo: "https://script.google.com/macros/s/AKfycby.../exec"
+      // ✅ LINK DA SUA API (JÁ CONFIGURADO)
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxQf_NRc0Ay-kFhtU4amdAJFceFNnwIW42kFrrpbKZMAxyqItqaljWw7o86SfSpP94l/exec";
 
       let dadosGlobais = {}; 
 
       window.onload = function() {
-        if (SCRIPT_URL === "COLE_SUA_URL_AQUI") {
-            alert("Erro: Você precisa editar o arquivo index.html e colocar a URL do seu Google Script na variável SCRIPT_URL.");
-            return;
-        }
         carregarTarefas();
       };
 
       function carregarTarefas() {
-        // Busca os dados via API
+        // Faz a chamada para a API usando o link configurado
         fetch(SCRIPT_URL + "?op=getDados")
             .then(res => res.json())
             .then(dados => {
@@ -207,7 +201,9 @@
             })
             .catch(erro => {
                 console.error(erro);
-                document.getElementById('app-content').innerHTML = '<div style="text-align:center; padding:20px; color:red;">Erro ao carregar dados.<br>Verifique se o Script foi implementado como "Qualquer pessoa" (Anyone).</div>';
+                document.getElementById('app-content').innerHTML = 
+                  '<div style="text-align:center; padding:20px; color:red;">' +
+                  'Erro ao conectar.<br>Verifique se a implantação está definida como "Qualquer pessoa" (Anyone).</div>';
             });
       }
 
@@ -237,6 +233,7 @@
             const statusText = item.feito ? "Concluído" : "Pendente";
             const rowClass = item.feito ? "completed-row" : "";
             
+            // Botões de tempo
             let htmlTimers = '';
             if (item.tempos && item.tempos.length > 0 && item.tempos[0] !== "") {
               htmlTimers = '<div class="action-toolbar">';
@@ -249,7 +246,7 @@
               htmlTimers += '</div>';
             }
 
-            // Tratamento para caracteres especiais no nome da tarefa
+            // Tratamento de aspas simples nos nomes das tarefas
             const tarefaSafe = item.tarefa.replace(/'/g, "\\'");
 
             html += `
@@ -280,7 +277,7 @@
         const statusSpan = element.querySelector('.object-status');
         const isDone = statusSpan.classList.contains('status-success');
         
-        // Atualização Otimista da Interface
+        // Atualização visual imediata (Otimista)
         if (isDone) {
             statusSpan.className = 'object-status status-pending';
             statusSpan.innerText = "Pendente";
@@ -293,7 +290,7 @@
             atualizarCacheLocal(dia, tarefa, true);
         }
 
-        // Envia comando para a API
+        // Envia atualização para a Planilha em segundo plano
         const url = SCRIPT_URL + "?op=alternarStatus&dia=" + encodeURIComponent(dia) + "&tarefa=" + encodeURIComponent(tarefa);
         fetch(url, { method: "POST" });
       }
@@ -305,10 +302,9 @@
         }
       }
 
-      // Lógica do Timer
       let intervaloAtual = null;
       function iniciarTimer(btn, minutos, e) {
-        e.stopPropagation(); 
+        e.stopPropagation(); // Impede que o clique no botão marque a tarefa como feita
         
         if (btn.classList.contains('active')) {
           clearInterval(intervaloAtual);
@@ -317,6 +313,7 @@
           return;
         }
 
+        // Reseta outros botões
         document.querySelectorAll('.sap-btn').forEach(b => {
           b.classList.remove('active');
           if(b.dataset.orig) b.innerText = b.dataset.orig;
@@ -353,7 +350,7 @@
             .then(() => {
                 btn.innerText = "Resetar Semana";
                 btn.style.opacity = "1";
-                carregarTarefas();
+                carregarTarefas(); // Recarrega a lista
             })
             .catch(e => {
                 alert("Erro ao resetar: " + e);
