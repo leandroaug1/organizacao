@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <title>SAP Fiori Home</title>
+    <style>
+      :root {
+        --sap-shell-color: #354a5f;
+        --sap-bg-color: #f7f7f7;
+        --sap-list-bg: #ffffff;
+        --sap-text: #32363a;
+        --sap-blue: #0854a0;
+        --sap-border: #d9d9d9;
+        --sap-success: #107e3e;
+        --sap-neutral: #6a6d70;
+      }
+
+      body {
+        font-family: 'Roboto', sans-serif;
+        background-color: var(--sap-bg-color);
+        margin: 0;
+        padding: 0;
+        color: var(--sap-text);
+        padding-bottom: 60px;
+      }
+
+      /* SHELL BAR (TOPO) */
+      .shell-bar {
+        background-color: var(--sap-shell-color);
+        color: white;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .shell-logo { font-weight: bold; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+      .shell-logo span { opacity: 0.8; font-weight: 300; font-size: 13px; }
+
+      /* HEADER & FILTROS */
+      .page-header {
+        background: #fff;
+        padding: 10px 16px 0 16px;
+        border-bottom: 1px solid var(--sap-border);
+      }
+      .object-header-title { font-size: 20px; color: var(--sap-text); margin-bottom: 15px; }
+      
+      .icon-tab-bar { display: flex; gap: 20px; }
+      .icon-tab {
+        padding-bottom: 10px;
+        cursor: pointer;
+        color: var(--sap-neutral);
+        font-size: 14px;
+        text-transform: uppercase;
+        font-weight: 500;
+        border-bottom: 3px solid transparent;
+      }
+      .icon-tab.selected {
+        color: var(--sap-blue);
+        border-bottom: 3px solid var(--sap-blue);
+      }
+
+      /* LISTA DE TAREFAS (OBJECT LIST) */
+      .list-container {
+        max-width: 800px;
+        margin: 20px auto;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-radius: 4px;
+      }
+
+      .group-header {
+        background-color: #f2f2f2;
+        padding: 8px 16px;
+        font-size: 12px;
+        font-weight: bold;
+        color: #666;
+        border-bottom: 1px solid var(--sap-border);
+        text-transform: uppercase;
+      }
+
+      .object-list-item {
+        display: flex;
+        flex-direction: column;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--sap-border);
+        cursor: pointer;
+        transition: background 0.1s;
+      }
+      
+      .object-list-item:active { background-color: #e5f0fa; }
+      .object-list-item:last-child { border-bottom: none; }
+
+      .item-main-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+      }
+
+      .item-title { font-size: 16px; color: #000; }
+      .completed-row .item-title { text-decoration: line-through; opacity: 0.6; }
+      
+      /* STATUS BADGE */
+      .object-status {
+        font-size: 12px;
+        font-weight: bold;
+      }
+      .status-pending { color: var(--sap-neutral); }
+      .status-success { color: var(--sap-success); }
+      
+      /* TIMER TOOLBAR */
+      .action-toolbar {
+        display: flex;
+        gap: 8px;
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px dashed #eee;
+      }
+      
+      /* BOTÕES SAP */
+      .sap-btn {
+        background: transparent;
+        border: 1px solid var(--sap-blue);
+        color: var(--sap-blue);
+        padding: 6px 12px;
+        font-size: 13px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: 500;
+        min-width: 60px;
+      }
+      .sap-btn:active, .sap-btn.active { background: var(--sap-blue); color: white; }
+
+      /* FOOTER FIXO */
+      .footer-bar {
+        position: fixed;
+        bottom: 0; left: 0; width: 100%; height: 50px;
+        background: var(--sap-shell-color);
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 0 16px;
+        box-sizing: border-box;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        z-index: 200;
+      }
+      
+      .footer-btn {
+        background: #bb0000;
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        font-size: 14px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .loading-msg { text-align: center; margin-top: 40px; color: #666; font-style: italic; }
+    </style>
+  </head>
+  <body>
+
+    <div class="shell-bar">
+      <div class="shell-logo">SAP <span>Home ERP</span></div>
+    </div>
+
+    <div class="page-header">
+      <div class="object-header-title">Cronograma Semanal</div>
+      <div class="icon-tab-bar">
+        <div class="icon-tab selected" onclick="filtrar('todos', this)">Todos</div>
+        <div class="icon-tab" onclick="filtrar('pendente', this)">Pendentes</div>
+        <div class="icon-tab" onclick="filtrar('concluido', this)">Concluídos</div>
+      </div>
+    </div>
+
+    <div id="app-content">
+      <div class="loading-msg">A carregar dados do ERP...</div>
+    </div>
+
+    <div class="footer-bar">
+      <button class="footer-btn" onclick="resetarTudo()">Resetar Semana</button>
+    </div>
+
+    <script>
+      let dadosGlobais = {}; // Cache local
+
+      window.onload = function() {
+        carregarTarefas();
+      };
+
+      function carregarTarefas() {
+        google.script.run
+          .withSuccessHandler(dados => {
+             dadosGlobais = dados;
+             renderizar(dados, 'todos');
+          })
+          .withFailureHandler(e => alert("Erro: " + e))
+          .getDados();
+      }
+
+      // Função principal de renderização
+      function renderizar(dados, filtro) {
+        const div = document.getElementById('app-content');
+        div.innerHTML = ""; 
+        const diasOrdem = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
+        let encontrouAlgo = false;
+
+        diasOrdem.forEach(dia => {
+          if (!dados[dia] || dados[dia].length === 0) return;
+          
+          // Filtra na memória
+          const itensFiltrados = dados[dia].filter(item => {
+            if (filtro === 'todos') return true;
+            if (filtro === 'pendente') return !item.feito;
+            if (filtro === 'concluido') return item.feito;
+            return true;
+          });
+
+          if (itensFiltrados.length === 0) return;
+          encontrouAlgo = true;
+
+          let html = `<div class="list-container"><div class="group-header">${dia}</div>`;
+          
+          itensFiltrados.forEach(item => {
+            const statusClass = item.feito ? "status-success" : "status-pending";
+            const statusText = item.feito ? "Concluído" : "Pendente";
+            const rowClass = item.feito ? "completed-row" : "";
+            
+            // Lógica para montar os botões de tempo
+            let htmlTimers = '';
+            if (item.tempos && item.tempos.length > 0 && item.tempos[0] !== "") {
+              htmlTimers = '<div class="action-toolbar">';
+              item.tempos.forEach(min => {
+                let m = min.trim();
+                if(m) {
+                  htmlTimers += `<button class="sap-btn" onclick="iniciarTimer(this, ${m}, event)">⏱ ${m} min</button>`;
+                }
+              });
+              htmlTimers += '</div>';
+            }
+
+            html += `
+              <div class="object-list-item ${rowClass}" onclick="clicarItem(this, '${item.tarefa}', '${dia}')">
+                <div class="item-main-content">
+                  <span class="item-title">${item.tarefa}</span>
+                  <span class="object-status ${statusClass}">${statusText}</span>
+                </div>
+                ${htmlTimers}
+              </div>`;
+          });
+          html += `</div>`;
+          div.innerHTML += html;
+        });
+        
+        if (!encontrouAlgo) {
+           div.innerHTML = '<div style="text-align:center; padding:30px; color:#999;">Nenhum item encontrado.</div>';
+        }
+      }
+
+      // Filtragem por abas
+      function filtrar(tipo, element) {
+        document.querySelectorAll('.icon-tab').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        renderizar(dadosGlobais, tipo);
+      }
+
+      // Clicar na tarefa (mudar status)
+      function clicarItem(element, tarefa, dia) {
+        const statusSpan = element.querySelector('.object-status');
+        const isDone = statusSpan.classList.contains('status-success');
+        
+        // UI Otimista
+        if (isDone) {
+            statusSpan.className = 'object-status status-pending';
+            statusSpan.innerText = "Pendente";
+            element.classList.remove('completed-row');
+            // Atualiza cache local
+            atualizarCacheLocal(dia, tarefa, false);
+        } else {
+            statusSpan.className = 'object-status status-success';
+            statusSpan.innerText = "Concluído";
+            element.classList.add('completed-row');
+            atualizarCacheLocal(dia, tarefa, true);
+        }
+
+        google.script.run.alternarStatus(tarefa, dia);
+      }
+
+      function atualizarCacheLocal(dia, tarefa, novoStatus) {
+        if(dadosGlobais[dia]) {
+           const item = dadosGlobais[dia].find(t => t.tarefa === tarefa);
+           if(item) item.feito = novoStatus;
+        }
+      }
+
+      // Lógica do Timer
+      let intervaloAtual = null;
+      function iniciarTimer(btn, minutos, e) {
+        e.stopPropagation(); // Impede clique na linha
+        
+        if (btn.classList.contains('active')) {
+          clearInterval(intervaloAtual);
+          btn.classList.remove('active');
+          btn.innerText = `⏱ ${minutos} min`;
+          return;
+        }
+
+        // Reseta visuais de outros botões
+        document.querySelectorAll('.sap-btn').forEach(b => {
+          b.classList.remove('active');
+          if(b.dataset.orig) b.innerText = b.dataset.orig;
+        });
+
+        btn.dataset.orig = `⏱ ${minutos} min`;
+        btn.classList.add('active');
+        
+        let segundosRestantes = minutos * 60;
+        if (intervaloAtual) clearInterval(intervaloAtual);
+
+        intervaloAtual = setInterval(() => {
+          segundosRestantes--;
+          let m = Math.floor(segundosRestantes / 60);
+          let s = segundosRestantes % 60;
+          btn.innerText = `${m}:${s < 10 ? '0'+s : s}`;
+
+          if (segundosRestantes <= 0) {
+            clearInterval(intervaloAtual);
+            btn.innerText = "Fim";
+            if(navigator.vibrate) navigator.vibrate([300, 100, 300]);
+          }
+        }, 1000);
+      }
+
+      function resetarTudo() {
+        if(confirm("Deseja realmente reiniciar a semana?")) {
+           const btn = document.querySelector('.footer-btn');
+           btn.innerText = "A processar...";
+           btn.style.opacity = "0.5";
+           google.script.run.withSuccessHandler(() => {
+             btn.innerText = "Resetar Semana";
+             btn.style.opacity = "1";
+             carregarTarefas();
+           }).resetarSemana();
+        }
+      }
+    </script>
+  </body>
+</html>
